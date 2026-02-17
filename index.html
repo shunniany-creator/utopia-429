@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烏托邦 429：地心祭壇 - 測試版</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        canvas { border: 2px solid #333; }
+    </style>
+</head>
+<body>
+
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 0 }, debug: false }
+    },
+    scene: { preload: preload, create: create, update: update }
+};
+
+const game = new Phaser.Game(config);
+let player;
+let diary; // 念力物件
+let chief;
+let isTelekinesisActive = false;
+let messageText;
+
+function preload() {
+    // 這裡暫時用色塊代替圖片，讓你不用煩惱素材
+}
+
+function create() {
+    // 1. 背景：血色戰場 (暗紅色)
+    this.add.rectangle(400, 300, 800, 600, 0x660000);
+
+    // 2. 主角 (綠色方塊)
+    player = this.physics.add.sprite(100, 300, null).setSize(40, 40);
+    player.setOrigin(0.5);
+    this.add.rectangle(100, 300, 40, 40, 0x00ff00); // 視覺代體
+
+    // 3. 酋長 (金色方塊)
+    chief = this.add.rectangle(700, 300, 50, 50, 0xffd700);
+
+    // 4. 可被念力移動的日記 (藍色方塊)
+    diary = this.physics.add.image(400, 300, null).setSize(30, 30);
+    this.add.rectangle(400, 300, 30, 30, 0x0000ff); // 視覺代體
+    diary.setInteractive();
+
+    // 5. 對話文字
+    messageText = this.add.text(400, 500, '部落最終戰：擊敗對手...', { fontSize: '20px', fill: '#fff' }).setOrigin(0.5);
+
+    // 6. 鍵盤控制
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    // 7. 模擬結界觸發 (按空白鍵)
+    this.input.keyboard.on('keydown-SPACE', () => {
+        triggerGlitch(this);
+    });
+}
+
+function update() {
+    // 主角移動邏輯
+    if (this.cursors.left.isDown) player.setVelocityX(-160);
+    else if (this.cursors.right.isDown) player.setVelocityX(160);
+    else player.setVelocityX(0);
+
+    if (this.cursors.up.isDown) player.setVelocityY(-160);
+    else if (this.cursors.down.isDown) player.setVelocityY(160);
+    else player.setVelocityY(0);
+
+    // 念力移動：按住滑鼠左鍵時，日記會飛向滑鼠
+    if (this.input.activePointer.isDown) {
+        this.physics.moveTo(diary, this.input.x, this.input.y, 300);
+        messageText.setText("意識干預中：Utopia 429 Protocol...");
+    } else {
+        diary.setVelocity(0);
+    }
+}
+
+function triggerGlitch(scene) {
+    // 螢幕震動
+    scene.cameras.main.shake(500, 0.02);
+    
+    // 改變背景色（模擬結界開啟）
+    scene.add.rectangle(400, 300, 800, 600, 0x001a33).setDepth(-1); 
+    
+    messageText.setText("酋長：這天空是假的。你準備好醒來了嗎？");
+    
+    // 簡單色彩偏移效果
+    scene.cameras.main.flash(500, 0, 255, 255);
+}
+</script>
+
+</body>
+</html>
