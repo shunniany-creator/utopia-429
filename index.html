@@ -32,18 +32,27 @@ let isTelekinesisActive = false;
 let messageText;
 
 function preload() {
-    // 這裡暫時用色塊代替圖片，讓你不用煩惱素材
+    // 這裡我們直接抓取網路上公開的免費像素素材 (一個小戰士)
+    this.load.spritesheet('hero', 'https://labs.phaser.io/assets/sprites/metalslug_mummy37x45.png', { frameWidth: 37, frameHeight: 45 });
 }
 
 function create() {
-    // 1. 背景：血色戰場 (暗紅色)
-    this.add.rectangle(400, 300, 800, 600, 0x660000);
+    // 1. 背景改為更細緻的色塊或圖片
+    this.add.rectangle(400, 300, 800, 600, 0x2d2d2d); 
 
-    // 2. 主角 (綠色方塊)
-    player = this.physics.add.sprite(100, 300, null).setSize(40, 40);
-    player.setOrigin(0.5);
-    this.add.rectangle(100, 300, 40, 40, 0x00ff00); // 視覺代體
+    // 2. 主角：從方塊變成動畫小人
+    player = this.physics.add.sprite(100, 300, 'hero');
+    player.setScale(2); // 放大一點比較帥
 
+    // 建立走路動畫
+    this.anims.create({
+        key: 'walk',
+        frames: this.anims.generateFrameNumbers('hero', { start: 0, end: 17 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    player.play('walk');
+    
     // 3. 酋長 (金色方塊)
     chief = this.add.rectangle(700, 300, 50, 50, 0xffd700);
 
