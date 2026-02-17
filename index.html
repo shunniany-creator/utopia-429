@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>烏托邦 429：地心祭壇 - 角色進化版</title>
+    <title>烏托邦 429：全角色進化</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     <style>
         body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
@@ -25,53 +25,50 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let player;
-let diary; 
-let chief;
-let messageText;
+let player, diary, chief, messageText;
 
 function preload() {
-    // 載入主角素材 (木乃伊戰士)
+    // 1. 載入主角 (木乃伊)
     this.load.spritesheet('hero', 'https://labs.phaser.io/assets/sprites/metalslug_mummy37x45.png', { frameWidth: 37, frameHeight: 45 });
-    // 載入酋長素材 (使用另一個軍事角色)
-    this.load.spritesheet('chief', 'https://labs.phaser.io/assets/sprites/mslug_main.png', { frameWidth: 32, frameHeight: 32 });
-    // 載入日記/道具素材 (像素小箱子)
-    this.load.image('item', 'https://labs.phaser.io/assets/sprites/firstaid.png');
+    // 2. 載入酋長 (換成一個威嚴的軍事角色)
+    this.load.spritesheet('chief_img', 'https://labs.phaser.io/assets/sprites/mslug_main.png', { frameWidth: 32, frameHeight: 32 });
+    // 3. 載入日記/道具 (像素藥箱)
+    this.load.image('diary_img', 'https://labs.phaser.io/assets/sprites/firstaid.png');
 }
 
 function create() {
-    // 1. 背景：深灰色戰場
-    this.add.rectangle(400, 300, 800, 600, 0x2d2d2d);
+    // 背景：深色質感
+    this.add.rectangle(400, 300, 800, 600, 0x222222);
 
-    // 2. 主角動畫與設置
+    // --- 主角設置 ---
     player = this.physics.add.sprite(100, 300, 'hero').setScale(2);
     this.anims.create({
-        key: 'hero_walk',
+        key: 'walk',
         frames: this.anims.generateFrameNumbers('hero', { start: 0, end: 17 }),
-        frameRate: 12,
+        frameRate: 10,
         repeat: -1
     });
-    player.play('hero_walk');
+    player.play('walk');
 
-    // 3. 酋長 (原金色方塊)
-    chief = this.physics.add.sprite(700, 300, 'chief').setScale(2.5).setFlipX(true);
+    // --- 酋長設置 (原本的金色方塊) ---
+    chief = this.physics.add.sprite(700, 300, 'chief_img').setScale(2.5).setFlipX(true);
     this.anims.create({
         key: 'chief_idle',
-        frames: this.anims.generateFrameNumbers('chief', { start: 0, end: 5 }),
+        frames: this.anims.generateFrameNumbers('chief_img', { start: 0, end: 5 }),
         frameRate: 8,
         repeat: -1
     });
     chief.play('chief_idle');
 
-    // 4. 日記/關鍵道具 (原藍色方塊)
-    diary = this.physics.add.image(400, 300, 'item').setScale(1.5);
+    // --- 日記道具設置 (原本的藍色方塊) ---
+    diary = this.physics.add.image(400, 300, 'diary_img').setScale(2);
     diary.setInteractive();
 
-    // 5. 對話文字
-    messageText = this.add.text(400, 500, '靠近酋長以開啟真相...', { 
-        fontSize: '20px', 
-        fill: '#fff',
-        backgroundColor: '#000000aa',
+    // 對話文字
+    messageText = this.add.text(400, 550, '使用方向鍵移動，按住滑鼠左鍵使用「念力」', { 
+        fontSize: '18px', 
+        fill: '#00ff00',
+        backgroundColor: '#000000bb',
         padding: { x: 10, y: 5 }
     }).setOrigin(0.5);
 
@@ -79,7 +76,7 @@ function create() {
 }
 
 function update() {
-    // 主角移動
+    // 主角控制
     if (this.cursors.left.isDown) {
         player.setVelocityX(-160);
         player.setFlipX(true);
@@ -94,19 +91,18 @@ function update() {
     else if (this.cursors.down.isDown) player.setVelocityY(160);
     else player.setVelocityY(0);
 
-    // 念力移動邏輯
+    // 念力邏輯：按住滑鼠時，日記道具會跟隨
     if (this.input.activePointer.isDown) {
         this.physics.moveTo(diary, this.input.x, this.input.y, 300);
-        messageText.setText("意識干預中：正在提取 Utopia 429 檔案...");
+        messageText.setText("【意識干預】正在將關鍵證物移出監控區...");
     } else {
         diary.setVelocity(0);
     }
 
-    // 距離偵測：靠近酋長觸發對話
+    // 酋長對話觸發
     let dist = Phaser.Math.Distance.Between(player.x, player.y, chief.x, chief.y);
-    if (dist < 80) {
-        messageText.setText("酋長：這二進位的世界，難道你還看不透嗎？");
-        if (Phaser.Math.Between(0, 100) > 95) this.cameras.main.shake(100, 0.005);
+    if (dist < 100) {
+        messageText.setText("酋長：429號，你手裡的不是藥箱，是通往真實的鑰匙。");
     }
 }
 </script>
