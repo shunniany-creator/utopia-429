@@ -3,109 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>烏托邦 429：全角色進化</title>
+    <title>烏托邦 429 - 核心系統測試</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     <style>
         body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        canvas { border: 2px solid #333; }
     </style>
 </head>
 <body>
-
 <script>
 const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    physics: {
-        default: 'arcade',
-        arcade: { gravity: { y: 0 }, debug: false }
-    },
+    physics: { default: 'arcade', arcade: { gravity: { y: 0 } } },
     scene: { preload: preload, create: create, update: update }
 };
 
 const game = new Phaser.Game(config);
-let player, diary, chief, messageText;
+let player, diary, chief, messageText, cursors;
 
 function preload() {
-    // 1. 載入主角 (木乃伊)
-    this.load.spritesheet('hero', 'https://labs.phaser.io/assets/sprites/metalslug_mummy37x45.png', { frameWidth: 37, frameHeight: 45 });
-    // 2. 載入酋長 (換成一個威嚴的軍事角色)
-    this.load.spritesheet('chief_img', 'https://labs.phaser.io/assets/sprites/mslug_main.png', { frameWidth: 32, frameHeight: 32 });
-    // 3. 載入日記/道具 (像素藥箱)
-    this.load.image('diary_img', 'https://labs.phaser.io/assets/sprites/firstaid.png');
+    // 這次不載入外部圖片，避免連結失效導致黑畫面
 }
 
 function create() {
-    // 背景：深色質感
-    this.add.rectangle(400, 300, 800, 600, 0x222222);
+    // 1. 背景
+    this.add.rectangle(400, 300, 800, 600, 0x1a1a1a);
 
-    // --- 主角設置 ---
-    player = this.physics.add.sprite(100, 300, 'hero').setScale(2);
-    this.anims.create({
-        key: 'walk',
-        frames: this.anims.generateFrameNumbers('hero', { start: 0, end: 17 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    player.play('walk');
+    // 2. 主角 (綠色圓形，代表靈魂戰士)
+    player = this.add.circle(100, 300, 20, 0x00ff00);
+    this.physics.add.existing(player);
+    player.body.setCollideWorldBounds(true);
 
-    // --- 酋長設置 (原本的金色方塊) ---
-    chief = this.physics.add.sprite(700, 300, 'chief_img').setScale(2.5).setFlipX(true);
-    this.anims.create({
-        key: 'chief_idle',
-        frames: this.anims.generateFrameNumbers('chief_img', { start: 0, end: 5 }),
-        frameRate: 8,
-        repeat: -1
-    });
-    chief.play('chief_idle');
+    // 3. 酋長 (金色五角星形狀/方塊，代表導師)
+    chief = this.add.rectangle(700, 300, 40, 40, 0xffd700);
+    this.physics.add.existing(chief, true); // 靜態物體
 
-    // --- 日記道具設置 (原本的藍色方塊) ---
-    diary = this.physics.add.image(400, 300, 'diary_img').setScale(2);
+    // 4. 關鍵證物：日記 (藍色小方塊，可用念力移動)
+    diary = this.add.rectangle(400, 300, 25, 25, 0x00bbff);
+    this.physics.add.existing(diary);
     diary.setInteractive();
 
-    // 對話文字
-    messageText = this.add.text(400, 550, '使用方向鍵移動，按住滑鼠左鍵使用「念力」', { 
-        fontSize: '18px', 
-        fill: '#00ff00',
-        backgroundColor: '#000000bb',
-        padding: { x: 10, y: 5 }
+    // 5. 提示文字
+    messageText = this.add.text(400, 550, '方向鍵移動 | 按住滑鼠左鍵使用念力', { 
+        fontSize: '20px', fill: '#ffffff', backgroundColor: '#333333', padding: 5 
     }).setOrigin(0.5);
 
-    this.cursors = this.input.keyboard.createCursorKeys();
+    cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
-    // 主角控制
-    if (this.cursors.left.isDown) {
-        player.setVelocityX(-160);
-        player.setFlipX(true);
-    } else if (this.cursors.right.isDown) {
-        player.setVelocityX(160);
-        player.setFlipX(false);
-    } else {
-        player.setVelocityX(0);
-    }
+    // 主角移動控制
+    const speed = 200;
+    player.body.setVelocity(0);
 
-    if (this.cursors.up.isDown) player.setVelocityY(-160);
-    else if (this.cursors.down.isDown) player.setVelocityY(160);
-    else player.setVelocityY(0);
+    if (cursors.left.isDown) player.body.setVelocityX(-speed);
+    else if (cursors.right.isDown) player.body.setVelocityX(speed);
+    if (cursors.up.isDown) player.body.setVelocityY(-speed);
+    else if (cursors.down.isDown) player.body.setVelocityY(speed);
 
-    // 念力邏輯：按住滑鼠時，日記道具會跟隨
+    // 念力邏輯：按住滑鼠時，日記會飛向滑鼠
     if (this.input.activePointer.isDown) {
         this.physics.moveTo(diary, this.input.x, this.input.y, 300);
-        messageText.setText("【意識干預】正在將關鍵證物移出監控區...");
+        messageText.setText("【念力干預中】正在移動虛擬物件...");
     } else {
-        diary.setVelocity(0);
+        diary.body.setVelocity(0);
     }
 
     // 酋長對話觸發
     let dist = Phaser.Math.Distance.Between(player.x, player.y, chief.x, chief.y);
-    if (dist < 100) {
-        messageText.setText("酋長：429號，你手裡的不是藥箱，是通往真實的鑰匙。");
+    if (dist < 80) {
+        messageText.setText("酋長：429號，記住... 只有移動真相，才能離開這裡。");
     }
 }
 </script>
-
 </body>
 </html>
