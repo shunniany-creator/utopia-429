@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>烏托邦 429：地心祭壇 - 測試版</title>
+    <title>烏托邦 429：地心祭壇 - 角色進化版</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     <style>
         body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
@@ -26,83 +26,88 @@ const config = {
 
 const game = new Phaser.Game(config);
 let player;
-let diary; // 念力物件
+let diary; 
 let chief;
-let isTelekinesisActive = false;
 let messageText;
 
 function preload() {
-    // 這裡我們直接抓取網路上公開的免費像素素材 (一個小戰士)
+    // 載入主角素材 (木乃伊戰士)
     this.load.spritesheet('hero', 'https://labs.phaser.io/assets/sprites/metalslug_mummy37x45.png', { frameWidth: 37, frameHeight: 45 });
+    // 載入酋長素材 (使用另一個軍事角色)
+    this.load.spritesheet('chief', 'https://labs.phaser.io/assets/sprites/mslug_main.png', { frameWidth: 32, frameHeight: 32 });
+    // 載入日記/道具素材 (像素小箱子)
+    this.load.image('item', 'https://labs.phaser.io/assets/sprites/firstaid.png');
 }
 
 function create() {
-    // 1. 背景改為更細緻的色塊或圖片
-    this.add.rectangle(400, 300, 800, 600, 0x2d2d2d); 
+    // 1. 背景：深灰色戰場
+    this.add.rectangle(400, 300, 800, 600, 0x2d2d2d);
 
-    // 2. 主角：從方塊變成動畫小人
-    player = this.physics.add.sprite(100, 300, 'hero');
-    player.setScale(2); // 放大一點比較帥
-
-    // 建立走路動畫
+    // 2. 主角動畫與設置
+    player = this.physics.add.sprite(100, 300, 'hero').setScale(2);
     this.anims.create({
-        key: 'walk',
+        key: 'hero_walk',
         frames: this.anims.generateFrameNumbers('hero', { start: 0, end: 17 }),
-        frameRate: 10,
+        frameRate: 12,
         repeat: -1
     });
-    player.play('walk');
-    
-    // 3. 酋長 (金色方塊)
-    chief = this.add.rectangle(700, 300, 50, 50, 0xffd700);
+    player.play('hero_walk');
 
-    // 4. 可被念力移動的日記 (藍色方塊)
-    diary = this.physics.add.image(400, 300, null).setSize(30, 30);
-    this.add.rectangle(400, 300, 30, 30, 0x0000ff); // 視覺代體
+    // 3. 酋長 (原金色方塊)
+    chief = this.physics.add.sprite(700, 300, 'chief').setScale(2.5).setFlipX(true);
+    this.anims.create({
+        key: 'chief_idle',
+        frames: this.anims.generateFrameNumbers('chief', { start: 0, end: 5 }),
+        frameRate: 8,
+        repeat: -1
+    });
+    chief.play('chief_idle');
+
+    // 4. 日記/關鍵道具 (原藍色方塊)
+    diary = this.physics.add.image(400, 300, 'item').setScale(1.5);
     diary.setInteractive();
 
     // 5. 對話文字
-    messageText = this.add.text(400, 500, '部落最終戰：擊敗對手...', { fontSize: '20px', fill: '#fff' }).setOrigin(0.5);
+    messageText = this.add.text(400, 500, '靠近酋長以開啟真相...', { 
+        fontSize: '20px', 
+        fill: '#fff',
+        backgroundColor: '#000000aa',
+        padding: { x: 10, y: 5 }
+    }).setOrigin(0.5);
 
-    // 6. 鍵盤控制
     this.cursors = this.input.keyboard.createCursorKeys();
-
-    // 7. 模擬結界觸發 (按空白鍵)
-    this.input.keyboard.on('keydown-SPACE', () => {
-        triggerGlitch(this);
-    });
 }
 
 function update() {
-    // 主角移動邏輯
-    if (this.cursors.left.isDown) player.setVelocityX(-160);
-    else if (this.cursors.right.isDown) player.setVelocityX(160);
-    else player.setVelocityX(0);
+    // 主角移動
+    if (this.cursors.left.isDown) {
+        player.setVelocityX(-160);
+        player.setFlipX(true);
+    } else if (this.cursors.right.isDown) {
+        player.setVelocityX(160);
+        player.setFlipX(false);
+    } else {
+        player.setVelocityX(0);
+    }
 
     if (this.cursors.up.isDown) player.setVelocityY(-160);
     else if (this.cursors.down.isDown) player.setVelocityY(160);
     else player.setVelocityY(0);
 
-    // 念力移動：按住滑鼠左鍵時，日記會飛向滑鼠
+    // 念力移動邏輯
     if (this.input.activePointer.isDown) {
         this.physics.moveTo(diary, this.input.x, this.input.y, 300);
-        messageText.setText("意識干預中：Utopia 429 Protocol...");
+        messageText.setText("意識干預中：正在提取 Utopia 429 檔案...");
     } else {
         diary.setVelocity(0);
     }
-}
 
-function triggerGlitch(scene) {
-    // 螢幕震動
-    scene.cameras.main.shake(500, 0.02);
-    
-    // 改變背景色（模擬結界開啟）
-    scene.add.rectangle(400, 300, 800, 600, 0x001a33).setDepth(-1); 
-    
-    messageText.setText("酋長：這天空是假的。你準備好醒來了嗎？");
-    
-    // 簡單色彩偏移效果
-    scene.cameras.main.flash(500, 0, 255, 255);
+    // 距離偵測：靠近酋長觸發對話
+    let dist = Phaser.Math.Distance.Between(player.x, player.y, chief.x, chief.y);
+    if (dist < 80) {
+        messageText.setText("酋長：這二進位的世界，難道你還看不透嗎？");
+        if (Phaser.Math.Between(0, 100) > 95) this.cameras.main.shake(100, 0.005);
+    }
 }
 </script>
 
